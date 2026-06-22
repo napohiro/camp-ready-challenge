@@ -27,8 +27,92 @@ const ALL_ITEMS = {
   '虫よけスプレー':   '🪲',
   'キャンプチェア':   '🪑',
   'ポータブル扇風機': '💨',
+  '帽子':             '👒',
 }
 
+// ===== Missions (per scenario) =====
+const MISSIONS = {
+  'spring-family': [
+    {
+      id: 'spring-rain',
+      text: '急な雨に備えよう',
+      extraRequired: ['防水シート'],
+      extraReasons: {
+        '防水シート': '追加ミッション「急な雨に備えよう」への対応として必要でした。テントの下に敷くことで急な雨による地面からの水分の侵入を防げます。',
+      },
+    },
+    {
+      id: 'spring-cold-kids',
+      text: '子どもの防寒を優先しよう',
+      extraRequired: ['厚手の上着'],
+      extraReasons: {
+        '厚手の上着': '追加ミッション「子どもの防寒を優先しよう」への対応として必要でした。子どもは体温調節が苦手なため、夜の冷え込みに備えた防寒着が欠かせません。',
+      },
+    },
+    {
+      id: 'spring-bugs',
+      text: '虫対策も忘れずに',
+      extraRequired: ['虫よけスプレー'],
+      extraReasons: {
+        '虫よけスプレー': '追加ミッション「虫対策も忘れずに」への対応として必要でした。春のキャンプでも虫の活動が活発な時期があり、子どもへの虫対策は重要です。',
+      },
+    },
+  ],
+  'summer-beach': [
+    {
+      id: 'summer-snorkel',
+      text: '海遊びを楽しもう',
+      extraRequired: ['シュノーケル'],
+      extraReasons: {
+        'シュノーケル': '追加ミッション「海遊びを楽しもう」への対応として必要でした。海の中を泳いで楽しむためにシュノーケルを持参しましょう。',
+      },
+    },
+    {
+      id: 'summer-sun',
+      text: '強い日差しに備えよう',
+      extraRequired: ['帽子'],
+      extraReasons: {
+        '帽子': '追加ミッション「強い日差しに備えよう」への対応として必要でした。強い日差しから頭部を直接守り、熱中症リスクを下げるために帽子が有効です。',
+      },
+    },
+    {
+      id: 'summer-bugs',
+      text: '夜の虫対策も必要',
+      extraRequired: ['虫よけスプレー'],
+      extraReasons: {
+        '虫よけスプレー': '追加ミッション「夜の虫対策も必要」への対応として必要でした。夏の海辺では夜になると虫が多く活動します。',
+      },
+    },
+  ],
+  'autumn-rain': [
+    {
+      id: 'autumn-wind',
+      text: '強風に備えよう',
+      extraRequired: ['キャンプチェア'],
+      extraReasons: {
+        'キャンプチェア': '追加ミッション「強風に備えよう」への対応として必要でした。雨の中で地面に直接座ると体温が急速に奪われます。チェアを使うことで冷えを防ぎながら安全に過ごせます。',
+      },
+    },
+    {
+      id: 'autumn-morning-cold',
+      text: '朝はさらに冷え込む予報',
+      extraRequired: ['厚手の上着'],
+      extraReasons: {
+        '厚手の上着': '追加ミッション「朝はさらに冷え込む予報」への対応として特に重要でした。想定以上の冷え込みに備えて、厚手の上着を必ず持参しましょう。',
+      },
+    },
+    {
+      id: 'autumn-mud',
+      text: 'テント周辺のぬかるみ対策',
+      extraRequired: ['防水シート'],
+      extraReasons: {
+        '防水シート': '追加ミッション「テント周辺のぬかるみ対策」への対応として特に重要でした。雨でぬかるんだ地面での活動を快適にするために防水シートが役立ちます。',
+      },
+    },
+  ],
+}
+
+// ===== Scenarios =====
 const SCENARIOS = [
   {
     id: 'spring-family',
@@ -162,19 +246,37 @@ const SCENARIOS = [
   },
 ]
 
+// ===== Helpers =====
+
 function calcScore(selected, required) {
   const requiredSet = new Set(required)
   const arr = [...selected]
   const correct = arr.filter(n => requiredSet.has(n)).length
-  const wrong = arr.filter(n => !requiredSet.has(n)).length
+  const wrong   = arr.filter(n => !requiredSet.has(n)).length
   return Math.max(0, Math.min(100, correct * 10 - wrong * 5))
 }
 
-function getJudge(score) {
-  if (score >= 90) return { rank: 'キャンプ達人',   comment: '完璧な準備！最高のキャンプになるよ！🎉' }
-  if (score >= 70) return { rank: '安心キャンパー', comment: '上出来！準備はほぼバッチリ！👍' }
-  if (score >= 50) return { rank: 'あと少し',       comment: 'もう少し確認しよう。忘れ物に注意！⚠️' }
-  return              { rank: '忘れ物注意報',      comment: '出発前に荷物をしっかり見直して！😱' }
+function calcTimeBonus(remainingTime) {
+  if (remainingTime >= 45) return 20
+  if (remainingTime >= 30) return 15
+  if (remainingTime >= 15) return 10
+  if (remainingTime >= 1)  return 5
+  return 0
+}
+
+function getRank({ missed, unnecessary, baseScore, timeBonus }) {
+  const finalScore = Math.min(120, baseScore + timeBonus)
+  if (missed.length === 0 && unnecessary.length === 0 && timeBonus > 0) {
+    return { title: 'PERFECT CAMPER', desc: '忘れ物ゼロ。状況判断もスピードも完璧です。', tier: 'perfect' }
+  }
+  if (finalScore >= 100) return { title: 'キャンプ達人',      desc: '素晴らしい判断力！準備はほぼ完璧。',               tier: 'gold' }
+  if (finalScore >= 80)  return { title: '安心キャンパー',    desc: '準備はほぼバッチリ。自信を持って出発できます！',   tier: 'silver' }
+  if (finalScore >= 60)  return { title: '準備上手になりかけ', desc: 'あと少し！次回はさらにうまくいくはず。',           tier: 'bronze' }
+  return                        { title: '忘れ物注意報',       desc: '出発前にもう一度荷物を確認しよう！',               tier: 'caution' }
+}
+
+function pickRandom(arr) {
+  return arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null
 }
 
 function DifficultyStars({ count }) {
@@ -185,25 +287,38 @@ function DifficultyStars({ count }) {
   )
 }
 
-export default function App() {
-  const [screen, setScreen]       = useState('start')
-  const [showHowto, setShowHowto] = useState(false)
-  const [scenario, setScenario]   = useState(null)
-  const [selected, setSelected]   = useState(new Set())
-  const [timeLeft, setTimeLeft]   = useState(TOTAL_TIME)
-  const [result, setResult]       = useState(null)
+// ===== App =====
 
-  const selectedRef = useRef(new Set())
-  const scenarioRef = useRef(null)
+export default function App() {
+  const [screen, setScreen]               = useState('start')
+  const [showHowto, setShowHowto]         = useState(false)
+  const [scenario, setScenario]           = useState(null)
+  const [activeMission, setActiveMission] = useState(null)
+  const [selected, setSelected]           = useState(new Set())
+  const [timeLeft, setTimeLeft]           = useState(TOTAL_TIME)
+  const [result, setResult]               = useState(null)
+
+  const selectedRef      = useRef(new Set())
+  const scenarioRef      = useRef(null)
+  const activeMissionRef = useRef(null)
+  const timeLeftRef      = useRef(TOTAL_TIME)
 
   const goToResult = useCallback((sel) => {
-    const sc = scenarioRef.current
+    const sc        = scenarioRef.current
+    const mission   = activeMissionRef.current
+    const remaining = timeLeftRef.current
     if (!sc) return
-    const requiredSet = new Set(sc.required)
-    const score = calcScore(sel, sc.required)
-    const missed = sc.required.filter(n => !sel.has(n))
-    const unnecessary = [...sel].filter(n => !requiredSet.has(n))
-    setResult({ score, missed, unnecessary, scenario: sc })
+
+    const extraRequired     = mission?.extraRequired || []
+    const effectiveRequired = [...new Set([...sc.required, ...extraRequired])]
+    const baseScore         = calcScore(sel, effectiveRequired)
+    const timeBonus         = calcTimeBonus(remaining)
+    const finalScore        = Math.min(120, baseScore + timeBonus)
+    const requiredSet       = new Set(effectiveRequired)
+    const missed            = effectiveRequired.filter(n => !sel.has(n))
+    const unnecessary       = [...sel].filter(n => !requiredSet.has(n))
+
+    setResult({ baseScore, timeBonus, finalScore, remainingTime: remaining, missed, unnecessary, scenario: sc, mission })
     setScreen('result')
   }, [])
 
@@ -213,18 +328,30 @@ export default function App() {
       goToResult(selectedRef.current)
       return
     }
-    const t = setTimeout(() => setTimeLeft(prev => prev - 1), 1000)
+    const t = setTimeout(() => {
+      setTimeLeft(prev => {
+        const next = prev - 1
+        timeLeftRef.current = next
+        return next
+      })
+    }, 1000)
     return () => clearTimeout(t)
   }, [screen, timeLeft, goToResult])
 
   const startGame = (sc) => {
+    const mission = pickRandom(MISSIONS[sc.id] || [])
+
     const empty = new Set()
-    selectedRef.current = empty
-    scenarioRef.current = sc
+    selectedRef.current      = empty
+    scenarioRef.current      = sc
+    activeMissionRef.current = mission
+    timeLeftRef.current      = TOTAL_TIME
+
     setSelected(empty)
     setTimeLeft(TOTAL_TIME)
     setResult(null)
     setScenario(sc)
+    setActiveMission(mission)
     setScreen('game')
   }
 
@@ -252,15 +379,16 @@ export default function App() {
               <h3 className="modal-title">🎮 遊び方</h3>
               <ol className="howto-list">
                 <li>キャンプシナリオを1つ選ぼう</li>
-                <li>シナリオの条件をよく確認する</li>
+                <li>シナリオの条件と追加ミッションを確認する</li>
                 <li>必要だと思う道具をタップして選択</li>
                 <li>60秒以内に「出発する」ボタンを押す</li>
-                <li>正解数に応じてスコアが決まる！</li>
+                <li>早く正確なほど高得点！</li>
               </ol>
               <div className="howto-note">
                 <p>✅ 必要な道具を選ぶと<strong>加点</strong></p>
                 <p>❌ 忘れると<strong>減点</strong>、不要な荷物も<strong>減点</strong></p>
-                <p>⏰ 時間切れでも自動で採点されます</p>
+                <p>⏰ 早く出発するほど<strong>タイムボーナス</strong></p>
+                <p>🎯 毎回変わる<strong>追加ミッション</strong>に注意！</p>
               </div>
               <button className="btn-primary" onClick={() => setShowHowto(false)}>
                 わかった！
@@ -300,6 +428,11 @@ export default function App() {
         </div>
 
         <div className="select-scroll">
+          <div className="select-replay-hint">
+            同じキャンプでも、追加ミッションが毎回変わります。<br />
+            状況を見て、必要な道具を判断しよう。
+          </div>
+
           {SCENARIOS.map(sc => (
             <div key={sc.id} className="scenario-select-card">
               <div className="sc-card-header">
@@ -330,9 +463,11 @@ export default function App() {
 
   // ---- Game Screen ----
   if (screen === 'game' && scenario) {
-    const urgent  = timeLeft <= 10
-    const fillPct = (timeLeft / TOTAL_TIME) * 100
-    const items   = scenario.itemNames.map(name => ({ name, emoji: ALL_ITEMS[name] }))
+    const urgent            = timeLeft <= 10
+    const fillPct           = (timeLeft / TOTAL_TIME) * 100
+    const extraRequired     = activeMission?.extraRequired || []
+    const effectiveItemNames = [...new Set([...scenario.itemNames, ...extraRequired])]
+    const items             = effectiveItemNames.map(name => ({ name, emoji: ALL_ITEMS[name] || '🏕️' }))
 
     return (
       <div className="screen game-screen">
@@ -351,6 +486,7 @@ export default function App() {
         </div>
 
         <div className="scroll-area">
+          {/* Scenario conditions */}
           <div className="scenario-card">
             <div className="scenario-title">📋 キャンプ条件</div>
             <div className="conditions">
@@ -362,6 +498,25 @@ export default function App() {
             </div>
           </div>
 
+          {/* Mission card */}
+          {activeMission && (
+            <div className="mission-card">
+              <div className="mission-card-label">🎯 追加ミッション</div>
+              <div className="mission-card-text">{activeMission.text}</div>
+              {activeMission.extraRequired.length > 0 && (
+                <div className="mission-card-items">
+                  <span>追加で必要な道具：</span>
+                  {activeMission.extraRequired.map(name => (
+                    <span key={name} className="mission-item-tag">
+                      {ALL_ITEMS[name] || '🏕️'} {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Items grid */}
           <div className="items-section">
             <p className="items-hint">必要な道具をタップして選ぼう</p>
             <div className="items-grid">
@@ -395,8 +550,26 @@ export default function App() {
 
   // ---- Result Screen ----
   if (screen === 'result' && result) {
-    const { score, missed, unnecessary, scenario: sc } = result
-    const { rank, comment } = getJudge(score)
+    const { baseScore, timeBonus, finalScore, remainingTime, missed, unnecessary, scenario: sc, mission } = result
+    const rank = getRank(result)
+
+    const missionItemSet  = new Set(mission?.extraRequired || [])
+    const baseRequiredSet = new Set(sc.required)
+
+    function getMissedReason(name) {
+      const isMission = missionItemSet.has(name)
+      const isBase    = baseRequiredSet.has(name)
+
+      if (isMission && !isBase) {
+        return mission?.extraReasons?.[name] || `追加ミッション「${mission?.text}」への対応として必要でした。`
+      }
+      if (isMission && isBase) {
+        const base = sc.requiredReasons[name] || ''
+        const note = mission?.extraReasons?.[name] || `追加ミッション「${mission?.text}」への対応としても特に重要でした。`
+        return base ? `${base} ${note}` : note
+      }
+      return sc.requiredReasons[name] || ''
+    }
 
     return (
       <div className="screen result-screen">
@@ -404,15 +577,51 @@ export default function App() {
           <h2 className="result-heading">🏆 結果発表</h2>
           <div className="result-scenario-label">{sc.emoji} {sc.name}</div>
 
-          <div className="score-card">
-            <div className="score-row">
-              <span className="score-num">{score}</span>
-              <span className="score-unit">点</span>
-            </div>
-            <div className="score-rank">{rank}</div>
-            <p className="score-comment">{comment}</p>
+          {/* Rank card */}
+          <div className={`rank-card rank-${rank.tier}`}>
+            <div className="rank-title">{rank.title}</div>
+            <p className="rank-desc">{rank.desc}</p>
           </div>
 
+          {/* Score breakdown */}
+          <div className="score-card">
+            <div className="score-card-label">最終スコア</div>
+            <div className="score-row">
+              <span className="score-num">{finalScore}</span>
+              <span className="score-unit">点</span>
+            </div>
+            <div className="score-detail-row">
+              <span>基本スコア <strong>{baseScore}点</strong></span>
+              <span className="score-plus">＋</span>
+              <span>
+                タイムボーナス <strong>+{timeBonus}点</strong>
+                {timeBonus > 0
+                  ? <span className="score-time-note">（残り{remainingTime}秒）</span>
+                  : <span className="score-time-note">（時間切れ）</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          {/* Mission recap */}
+          {mission && (
+            <div className="mission-recap-card">
+              <div className="mission-recap-label">🎯 今回の追加ミッション</div>
+              <div className="mission-recap-text">{mission.text}</div>
+              {mission.extraRequired.length > 0 && (
+                <div className="mission-recap-items">
+                  <span className="mission-recap-hint">追加で必要な道具：</span>
+                  {mission.extraRequired.map(name => (
+                    <span key={name} className="mission-item-tag">
+                      {ALL_ITEMS[name] || '🏕️'} {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Missed items */}
           {missed.length > 0 && (
             <div className="review-card missed">
               <div className="review-title">😱 忘れ物（{missed.length}個）</div>
@@ -420,17 +629,19 @@ export default function App() {
                 {missed.map(name => (
                   <div key={name} className="review-item">
                     <div className="review-item-name">
-                      {ALL_ITEMS[name]} {name}
+                      {ALL_ITEMS[name] || '🏕️'} {name}
+                      {missionItemSet.has(name) && (
+                        <span className="mission-badge-small">🎯 ミッション</span>
+                      )}
                     </div>
-                    <p className="review-item-reason">
-                      {sc.requiredReasons[name]}
-                    </p>
+                    <p className="review-item-reason">{getMissedReason(name)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Low-priority items */}
           {unnecessary.length > 0 && (
             <div className="review-card unnecessary">
               <div className="review-title">
@@ -440,7 +651,7 @@ export default function App() {
                 {unnecessary.map(name => (
                   <div key={name} className="review-item">
                     <div className="review-item-name">
-                      {ALL_ITEMS[name]} {name}
+                      {ALL_ITEMS[name] || '🏕️'} {name}
                     </div>
                     <p className="review-item-reason">
                       {sc.unnecessaryReasons[name] ?? 'このシナリオでは優先度が低い荷物です。'}
@@ -449,10 +660,6 @@ export default function App() {
                 ))}
               </div>
             </div>
-          )}
-
-          {missed.length === 0 && unnecessary.length === 0 && (
-            <div className="perfect-msg">🎉 完璧！全問正解！</div>
           )}
 
           <div className="camp-point-card">
