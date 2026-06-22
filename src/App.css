@@ -665,7 +665,7 @@
 .review-card {
   background: var(--card-bg);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 16px 18px;
   width: 100%;
   box-shadow: var(--shadow);
 }
@@ -682,30 +682,49 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  line-height: 1.5;
 }
 
-.review-items {
+/* Review item list (reason-based layout) */
+.review-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
 }
 
-.review-tag {
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 600;
+.review-item {
+  padding: 12px 0;
+  border-top: 1px solid #f0ebe0;
 }
 
-.missed-tag {
-  background: #ffe5e7;
+.review-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.review-item:last-child {
+  padding-bottom: 0;
+}
+
+.review-item-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.missed .review-item-name {
   color: #c1121f;
 }
 
-.unnecessary-tag {
-  background: #fef0e6;
+.unnecessary .review-item-name {
   color: #b84a16;
+}
+
+.review-item-reason {
+  font-size: 13px;
+  color: var(--text-sub);
+  line-height: 1.65;
+  margin: 0;
 }
 
 /* Perfect message */
