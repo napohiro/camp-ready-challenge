@@ -972,3 +972,680 @@
   line-height: 1.65;
   text-align: center;
 }
+
+/* ===== Ver.2.0 — Garage Exploration ===== */
+
+/* ---- Progress bar ---- */
+.garage-progress {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 16px 13px;
+  margin-bottom: 12px;
+}
+
+.garage-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.garage-progress-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+
+.garage-progress-nums {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--green-dark);
+}
+
+.garage-progress-sep {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.garage-progress-track {
+  height: 8px;
+  background: #e8dfc8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.garage-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--green-light));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+/* ---- Section labels ---- */
+.garage-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+/* ---- Storage area 2×2 grid ---- */
+.storage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.storage-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 108px;
+  font-family: inherit;
+}
+
+.storage-card:active {
+  transform: scale(0.95);
+}
+
+.storage-card.active {
+  border-color: var(--storage-color, var(--green));
+  background: color-mix(in srgb, var(--storage-color, var(--green)) 6%, white);
+}
+
+.storage-card-emoji {
+  font-size: 38px;
+  line-height: 1;
+}
+
+.storage-card-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.storage-card-counts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.storage-loaded-badge {
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--green-light);
+}
+
+.storage-total-badge {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* ---- Character strip ---- */
+.character-strip {
+  position: relative;
+  height: 64px;
+  margin: 6px 0 14px;
+  overflow: visible;
+}
+
+.char-figure-wrap {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.char-figure {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.char-bubble {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.char-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--border);
+}
+
+/* ---- Car trunk (always visible) ---- */
+.trunk-area {
+  background: var(--green-dark);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  margin-bottom: 16px;
+  min-height: 70px;
+}
+
+.trunk-items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.trunk-item-tag {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.trunk-item-tag:active {
+  background: rgba(255, 255, 255, 0.32);
+  transform: scale(0.94);
+}
+
+.trunk-empty-hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ---- Storage modal (bottom sheet) ---- */
+.storage-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 100;
+}
+
+.storage-modal {
+  background: var(--card-bg);
+  border-radius: 20px 20px 0 0;
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.storage-modal-header {
+  padding: 16px 20px 14px;
+  color: #fff;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.storage-modal-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.storage-modal-title {
+  font-size: 17px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.storage-modal-close {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.storage-modal-close:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.storage-modal-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+.storage-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0ebe0;
+  gap: 12px;
+  transition: background 0.15s;
+}
+
+.storage-item-row.loaded {
+  background: rgba(45, 106, 79, 0.05);
+}
+
+.storage-item-row:last-child {
+  border-bottom: none;
+}
+
+.storage-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.storage-item-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.storage-item-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-load {
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+
+.btn-load:active {
+  transform: scale(0.94);
+}
+
+.btn-unload {
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border: 1.5px solid var(--green-light);
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-unload:active {
+  background: #b7e4c7;
+  transform: scale(0.94);
+}
+
+.storage-modal-footer {
+  padding: 12px 20px 20px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+}
+
+.storage-modal-close-btn {
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  cursor: pointer;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.storage-modal-close-btn:active {
+  background: #ece5d5;
+}
+
+/* ---- Trunk confirm screen ---- */
+.trunk-confirm-screen {
+  background: var(--bg);
+}
+
+.trunk-confirm-header {
+  background: var(--green-dark);
+  padding: 22px 20px 18px;
+  text-align: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.trunk-confirm-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 5px;
+  line-height: 1.3;
+}
+
+.trunk-confirm-subtitle {
+  font-size: 14px;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.trunk-confirm-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.trunk-confirm-count {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--green-dark);
+}
+
+.trunk-confirm-list {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 60px;
+}
+
+.trunk-confirm-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 13px;
+  border-radius: 20px;
+}
+
+.trunk-confirm-item-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.trunk-confirm-item-name {
+  white-space: nowrap;
+}
+
+.trunk-confirm-empty {
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 12px 0;
+  width: 100%;
+}
+
+.trunk-confirm-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== Ver.2.0 Visual Enhancement ===== */
+
+/* ---- Scroll area background for garage ---- */
+.garage-scroll {
+  background: #f0e8d8;
+}
+
+/* ---- Garage wall zone (dark, where storage lives) ---- */
+.garage-wall-zone {
+  background: linear-gradient(170deg, #1c2b3a 0%, #243248 60%, #2a3b52 100%);
+  border-radius: 14px;
+  padding: 14px 12px 10px;
+  margin-bottom: 0;
+  position: relative;
+}
+
+.garage-zone-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+
+/* ---- Storage card type-specific styles ---- */
+
+/* キャンプ棚: warm wood */
+.storage-card--camp-shelf {
+  background: linear-gradient(145deg, #fdf0d5 0%, #eed9a8 100%);
+  border-color: #b08050;
+}
+.storage-card--camp-shelf::after {
+  content: '';
+  position: absolute;
+  bottom: 26px;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: rgba(160, 100, 50, 0.3);
+  border-radius: 1px;
+}
+.storage-card--camp-shelf .storage-card-emoji {
+  filter: drop-shadow(0 2px 4px rgba(120, 80, 20, 0.25));
+}
+
+/* アウトドアボックス: military olive */
+.storage-card--outdoor-box {
+  background: linear-gradient(145deg, #f0f4e8 0%, #d6e3b8 100%);
+  border-color: #6a8a45;
+}
+.storage-card--outdoor-box .storage-card-name {
+  font-size: 11px;
+}
+
+/* 衣類ケース: soft blue */
+.storage-card--clothes-case {
+  background: linear-gradient(145deg, #eaf2fc 0%, #c8ddf5 100%);
+  border-color: #4a7ab5;
+}
+
+/* 食材・保冷エリア: cool blue-white */
+.storage-card--food-cold {
+  background: linear-gradient(145deg, #e8f5fc 0%, #b8dcf0 100%);
+  border-color: #3a8ec0;
+}
+
+/* Active state (any type): glow from --storage-color */
+.storage-card.active {
+  border-color: var(--storage-color, var(--green));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--storage-color, var(--green)) 25%, transparent);
+  transform: scale(0.975);
+}
+
+/* ---- Character update: holding item ---- */
+.char-body {
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.char-holding {
+  font-size: 22px;
+  position: absolute;
+  left: calc(100% + 3px);
+  bottom: 2px;
+  line-height: 1;
+  animation: holding-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  pointer-events: none;
+}
+
+@keyframes holding-pop {
+  from { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ---- Car zone ---- */
+.garage-car-zone {
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.car-body-strip {
+  background: linear-gradient(180deg, var(--green-dark) 0%, #132e22 100%);
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.car-strip-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  flex: 1;
+}
+
+.car-strip-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.car-trunk-interior {
+  background: #16202e;
+  padding: 14px 16px 18px;
+  min-height: 72px;
+  border-left: 3px solid var(--green-dark);
+  border-right: 3px solid var(--green-dark);
+  border-bottom: 3px solid var(--green-dark);
+}
+
+/* Override trunk-empty-hint for car-trunk-interior (darker bg) */
+.car-trunk-interior .trunk-empty-hint {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ---- Trunk item pop animation ---- */
+@keyframes item-pop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  65%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.trunk-item-tag.just-added {
+  animation: item-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ---- Storage modal slide-up animation ---- */
+@keyframes slide-up-modal {
+  from { transform: translateY(100%); opacity: 0.9; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.storage-modal {
+  animation: slide-up-modal 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+/* ---- Storage card tap feedback (more responsive) ---- */
+.storage-card {
+  position: relative;
+}
+.storage-card:active {
+  transform: scale(0.93);
+}
+
+/* ---- Storage item row: slide in on modal open ---- */
+.storage-modal-body {
+  animation: modal-body-fade 0.2s ease 0.05s both;
+}
+
+@keyframes modal-body-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Garage section label (outside wall zone) update ---- */
+.garage-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  padding-left: 2px;
+}

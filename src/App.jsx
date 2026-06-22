@@ -30,6 +30,51 @@ const ALL_ITEMS = {
   '帽子':             '👒',
 }
 
+// Each item belongs to a storage area
+const ITEM_STORAGE = {
+  'テント':           'camp-shelf',
+  'タープ':           'camp-shelf',
+  '寝袋':             'camp-shelf',
+  'マット':           'camp-shelf',
+  'ランタン':         'camp-shelf',
+  '焚き火台':         'camp-shelf',
+  '火ばさみ':         'camp-shelf',
+  'キャンプチェア':   'camp-shelf',
+  'ハンモック':       'camp-shelf',
+  '防水シート':       'outdoor-box',
+  '虫よけスプレー':   'outdoor-box',
+  '救急セット':       'outdoor-box',
+  'シュノーケル':     'outdoor-box',
+  '釣り竿':           'outdoor-box',
+  'スノーボード':     'outdoor-box',
+  'レインウェア':     'clothes-case',
+  '厚手の上着':       'clothes-case',
+  '水着':             'clothes-case',
+  'サンダル':         'clothes-case',
+  '帽子':             'clothes-case',
+  'クーラーボックス': 'food-cold',
+  '日焼け止め':       'food-cold',
+  'ポータブル扇風機': 'food-cold',
+  '扇風機':           'food-cold',
+}
+
+const STORAGE_AREAS = [
+  { id: 'camp-shelf',   emoji: '🪵', name: 'キャンプ棚',        color: '#2d6a4f' },
+  { id: 'outdoor-box',  emoji: '📦', name: 'アウトドアボックス', color: '#7c5c2e' },
+  { id: 'clothes-case', emoji: '👕', name: '衣類ケース',         color: '#1565c0' },
+  { id: 'food-cold',    emoji: '🧺', name: '食材・保冷エリア',   color: '#6a1b9a' },
+]
+
+// Character x positions (%) per active area
+const CHAR_X = {
+  'idle':         '46%',
+  'camp-shelf':   '18%',
+  'outdoor-box':  '70%',
+  'clothes-case': '18%',
+  'food-cold':    '70%',
+  'car-trunk':    '46%',
+}
+
 // ===== Missions (per scenario) =====
 const MISSIONS = {
   'spring-family': [
@@ -269,10 +314,10 @@ function getRank({ missed, unnecessary, baseScore, timeBonus }) {
   if (missed.length === 0 && unnecessary.length === 0 && timeBonus > 0) {
     return { title: 'PERFECT CAMPER', desc: '忘れ物ゼロ。状況判断もスピードも完璧です。', tier: 'perfect' }
   }
-  if (finalScore >= 100) return { title: 'キャンプ達人',      desc: '素晴らしい判断力！準備はほぼ完璧。',               tier: 'gold' }
-  if (finalScore >= 80)  return { title: '安心キャンパー',    desc: '準備はほぼバッチリ。自信を持って出発できます！',   tier: 'silver' }
+  if (finalScore >= 100) return { title: 'キャンプ達人',       desc: '素晴らしい判断力！準備はほぼ完璧。',               tier: 'gold' }
+  if (finalScore >= 80)  return { title: '安心キャンパー',     desc: '準備はほぼバッチリ。自信を持って出発できます！',   tier: 'silver' }
   if (finalScore >= 60)  return { title: '準備上手になりかけ', desc: 'あと少し！次回はさらにうまくいくはず。',           tier: 'bronze' }
-  return                        { title: '忘れ物注意報',       desc: '出発前にもう一度荷物を確認しよう！',               tier: 'caution' }
+  return                        { title: '忘れ物注意報',        desc: '出発前にもう一度荷物を確認しよう！',               tier: 'caution' }
 }
 
 function pickRandom(arr) {
@@ -287,6 +332,43 @@ function DifficultyStars({ count }) {
   )
 }
 
+// Bottom-sheet modal showing items inside one storage area
+function StorageModal({ area, items, loaded, onLoad, onUnload, onClose }) {
+  return (
+    <div className="storage-modal-overlay" onClick={onClose}>
+      <div className="storage-modal" onClick={e => e.stopPropagation()}>
+        <div className="storage-modal-header" style={{ background: area.color }}>
+          <span className="storage-modal-icon">{area.emoji}</span>
+          <span className="storage-modal-title">{area.name}</span>
+          <button className="storage-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="storage-modal-body">
+          {items.map(name => {
+            const isLoaded = loaded.has(name)
+            return (
+              <div key={name} className={`storage-item-row${isLoaded ? ' loaded' : ''}`}>
+                <div className="storage-item-info">
+                  <span className="storage-item-icon">{ALL_ITEMS[name] || '🏕️'}</span>
+                  <span className="storage-item-name">{name}</span>
+                </div>
+                <button
+                  className={isLoaded ? 'btn-unload' : 'btn-load'}
+                  onClick={() => isLoaded ? onUnload(name) : onLoad(name)}
+                >
+                  {isLoaded ? '✓ 積み込み済み' : '車に積む →'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+        <div className="storage-modal-footer">
+          <button className="storage-modal-close-btn" onClick={onClose}>閉じる</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ===== App =====
 
 export default function App() {
@@ -294,11 +376,16 @@ export default function App() {
   const [showHowto, setShowHowto]         = useState(false)
   const [scenario, setScenario]           = useState(null)
   const [activeMission, setActiveMission] = useState(null)
-  const [selected, setSelected]           = useState(new Set())
+  const [loaded, setLoaded]               = useState(new Set())
   const [timeLeft, setTimeLeft]           = useState(TOTAL_TIME)
   const [result, setResult]               = useState(null)
+  const [openStorage, setOpenStorage]     = useState(null)
+  const [charPos, setCharPos]             = useState('idle')
+  const [charBubble, setCharBubble]       = useState('')
+  const [charHolding, setCharHolding]     = useState(null)
+  const [justAdded, setJustAdded]         = useState(new Set())
 
-  const selectedRef      = useRef(new Set())
+  const loadedRef        = useRef(new Set())
   const scenarioRef      = useRef(null)
   const activeMissionRef = useRef(null)
   const timeLeftRef      = useRef(TOTAL_TIME)
@@ -325,7 +412,7 @@ export default function App() {
   useEffect(() => {
     if (screen !== 'game') return
     if (timeLeft <= 0) {
-      goToResult(selectedRef.current)
+      goToResult(loadedRef.current)
       return
     }
     const t = setTimeout(() => {
@@ -342,16 +429,21 @@ export default function App() {
     const mission = pickRandom(MISSIONS[sc.id] || [])
 
     const empty = new Set()
-    selectedRef.current      = empty
+    loadedRef.current        = empty
     scenarioRef.current      = sc
     activeMissionRef.current = mission
     timeLeftRef.current      = TOTAL_TIME
 
-    setSelected(empty)
+    setLoaded(empty)
     setTimeLeft(TOTAL_TIME)
     setResult(null)
     setScenario(sc)
     setActiveMission(mission)
+    setOpenStorage(null)
+    setCharPos('idle')
+    setCharBubble('出発の準備をしよう！')
+    setCharHolding(null)
+    setJustAdded(new Set())
     setScreen('game')
   }
 
@@ -359,14 +451,45 @@ export default function App() {
     if (result?.scenario) startGame(result.scenario)
   }
 
-  const toggleItem = (name) => {
-    setSelected(prev => {
+  const handleLoad = (name) => {
+    setLoaded(prev => {
       const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
-      selectedRef.current = next
+      next.add(name)
+      loadedRef.current = next
       return next
     })
+    // Step 1: show "picking up" at current storage area
+    setCharHolding(name)
+    setCharBubble('取ったよ！')
+    // Step 2: move to car after 550ms
+    setTimeout(() => {
+      setCharPos('car-trunk')
+      setCharBubble('積み込んだ！')
+      setJustAdded(prev => new Set(prev).add(name))
+      setTimeout(() => {
+        setJustAdded(prev => {
+          const next = new Set(prev)
+          next.delete(name)
+          return next
+        })
+      }, 500)
+    }, 550)
+    // Clear holding
+    setTimeout(() => {
+      setCharHolding(null)
+      setCharBubble('')
+    }, 2300)
+  }
+
+  const handleUnload = (name) => {
+    setLoaded(prev => {
+      const next = new Set(prev)
+      next.delete(name)
+      loadedRef.current = next
+      return next
+    })
+    setCharBubble(`${name}を取り出した`)
+    setTimeout(() => setCharBubble(''), 1800)
   }
 
   // ---- Start Screen ----
@@ -379,13 +502,13 @@ export default function App() {
               <h3 className="modal-title">🎮 遊び方</h3>
               <ol className="howto-list">
                 <li>キャンプシナリオを1つ選ぼう</li>
-                <li>シナリオの条件と追加ミッションを確認する</li>
-                <li>必要だと思う道具をタップして選択</li>
+                <li>ガレージの収納エリアをタップして探索</li>
+                <li>必要な道具を「車に積む」でトランクへ</li>
                 <li>60秒以内に「出発する」ボタンを押す</li>
                 <li>早く正確なほど高得点！</li>
               </ol>
               <div className="howto-note">
-                <p>✅ 必要な道具を選ぶと<strong>加点</strong></p>
+                <p>✅ 必要な道具を積むと<strong>加点</strong></p>
                 <p>❌ 忘れると<strong>減点</strong>、不要な荷物も<strong>減点</strong></p>
                 <p>⏰ 早く出発するほど<strong>タイムボーナス</strong></p>
                 <p>🎯 毎回変わる<strong>追加ミッション</strong>に注意！</p>
@@ -403,7 +526,7 @@ export default function App() {
             忘れ物ゼロ！<br />キャンプ出発まで60秒
           </h1>
           <p className="subtitle">
-            キャンプ出発前、<br />必要な道具を60秒以内に選ぼう
+            ガレージを探索して道具を積み込もう。<br />60秒以内に出発できるか？
           </p>
           <button className="btn-primary" onClick={() => setScreen('select')}>
             ゲームをはじめる
@@ -461,16 +584,27 @@ export default function App() {
     )
   }
 
-  // ---- Game Screen ----
+  // ---- Game Screen (Garage Exploration) ----
   if (screen === 'game' && scenario) {
-    const urgent            = timeLeft <= 10
-    const fillPct           = (timeLeft / TOTAL_TIME) * 100
-    const extraRequired     = activeMission?.extraRequired || []
+    const urgent             = timeLeft <= 10
+    const fillPct            = (timeLeft / TOTAL_TIME) * 100
+    const extraRequired      = activeMission?.extraRequired || []
+    const effectiveRequired  = [...new Set([...scenario.required, ...extraRequired])]
     const effectiveItemNames = [...new Set([...scenario.itemNames, ...extraRequired])]
-    const items             = effectiveItemNames.map(name => ({ name, emoji: ALL_ITEMS[name] || '🏕️' }))
+    const loadProgress       = Math.min(100, loaded.size / Math.max(1, effectiveRequired.length) * 100)
+
+    const itemsByStorage = {}
+    STORAGE_AREAS.forEach(a => { itemsByStorage[a.id] = [] })
+    effectiveItemNames.forEach(name => {
+      const sid = ITEM_STORAGE[name]
+      if (sid && itemsByStorage[sid]) itemsByStorage[sid].push(name)
+    })
+
+    const activeArea = STORAGE_AREAS.find(a => a.id === openStorage)
 
     return (
       <div className="screen game-screen">
+        {/* Sticky timer bar */}
         <div className={`timer-bar${urgent ? ' urgent' : ''}`}>
           <div className="game-scenario-label">
             {scenario.emoji} {scenario.name}
@@ -485,7 +619,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="scroll-area">
+        <div className="scroll-area garage-scroll">
           {/* Scenario conditions */}
           <div className="scenario-card">
             <div className="scenario-title">📋 キャンプ条件</div>
@@ -516,33 +650,180 @@ export default function App() {
             </div>
           )}
 
-          {/* Items grid */}
-          <div className="items-section">
-            <p className="items-hint">必要な道具をタップして選ぼう</p>
-            <div className="items-grid">
-              {items.map(item => {
-                const isSelected = selected.has(item.name)
+          {/* Loading progress */}
+          <div className="garage-progress">
+            <div className="garage-progress-row">
+              <span className="garage-progress-text">🎒 準備進捗</span>
+              <span className="garage-progress-nums">
+                <strong>{loaded.size}</strong>
+                <span className="garage-progress-sep"> / {effectiveRequired.length}個</span>
+              </span>
+            </div>
+            <div className="garage-progress-track">
+              <div className="garage-progress-fill" style={{ width: `${loadProgress}%` }} />
+            </div>
+          </div>
+
+          {/* ── Garage wall zone ── */}
+          <div className="garage-wall-zone">
+            <div className="garage-zone-label">📦 収納エリアを調べる</div>
+            <div className="storage-grid">
+              {STORAGE_AREAS.map(area => {
+                const areaItems   = itemsByStorage[area.id] || []
+                if (areaItems.length === 0) return null
+                const loadedCount = areaItems.filter(n => loaded.has(n)).length
+                const isOpen      = openStorage === area.id
                 return (
                   <button
-                    key={item.name}
-                    className={`item-card${isSelected ? ' selected' : ''}`}
-                    onClick={() => toggleItem(item.name)}
+                    key={area.id}
+                    className={`storage-card storage-card--${area.id}${isOpen ? ' active' : ''}`}
+                    style={{ '--storage-color': area.color }}
+                    onClick={() => {
+                      setOpenStorage(area.id)
+                      setCharPos(area.id)
+                      setCharBubble(`${area.name}を調べている…`)
+                      setTimeout(() => setCharBubble(''), 2200)
+                    }}
                   >
-                    {isSelected && <span className="check-mark">✓</span>}
-                    <span className="item-emoji">{item.emoji}</span>
-                    <span className="item-name">{item.name}</span>
+                    <span className="storage-card-emoji">{area.emoji}</span>
+                    <span className="storage-card-name">{area.name}</span>
+                    <div className="storage-card-counts">
+                      {loadedCount > 0 && (
+                        <span className="storage-loaded-badge">✓ {loadedCount}個</span>
+                      )}
+                      <span className="storage-total-badge">{areaItems.length}点</span>
+                    </div>
                   </button>
                 )
               })}
             </div>
+
+            {/* Camper character */}
+            <div className="character-strip">
+              <div
+                className="char-figure-wrap"
+                style={{ left: CHAR_X[charPos] || '46%' }}
+              >
+                {charBubble && <div className="char-bubble">{charBubble}</div>}
+                <div className="char-body">
+                  <div className="char-figure">🧑‍🦱</div>
+                  {charHolding && (
+                    <div className="char-holding">{ALL_ITEMS[charHolding] || '📦'}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Car zone ── */}
+          <div className="garage-car-zone">
+            <div className="car-body-strip">
+              <span className="car-strip-title">🚗 車の荷室</span>
+              <span className="car-strip-hint">タップで取り出し</span>
+            </div>
+            <div className="car-trunk-interior">
+              {loaded.size === 0 ? (
+                <p className="trunk-empty-hint">まだ何も積んでいません。棚を調べて積み込もう！</p>
+              ) : (
+                <div className="trunk-items-grid">
+                  {[...loaded].map(name => (
+                    <button
+                      key={name}
+                      className={`trunk-item-tag${justAdded.has(name) ? ' just-added' : ''}`}
+                      onClick={() => {
+                        setCharPos('car-trunk')
+                        handleUnload(name)
+                      }}
+                    >
+                      {ALL_ITEMS[name] || '🏕️'} {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Fixed departure bar */}
         <div className="depart-bar">
-          <span className="selected-count">{selected.size}個選択中</span>
-          <button className="btn-depart" onClick={() => goToResult(selectedRef.current)}>
+          <span className="selected-count">{loaded.size}個積み込み済み</span>
+          <button
+            className="btn-depart"
+            onClick={() => {
+              setCharPos('car-trunk')
+              setScreen('trunk-confirm')
+            }}
+          >
             🚗 出発する！
           </button>
+        </div>
+
+        {/* Storage modal (bottom sheet) */}
+        {openStorage && activeArea && (
+          <StorageModal
+            area={activeArea}
+            items={itemsByStorage[openStorage] || []}
+            loaded={loaded}
+            onLoad={handleLoad}
+            onUnload={(name) => {
+              setCharPos(openStorage)
+              handleUnload(name)
+            }}
+            onClose={() => setOpenStorage(null)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // ---- Trunk Confirm Screen ----
+  if (screen === 'trunk-confirm' && scenario) {
+    return (
+      <div className="screen trunk-confirm-screen">
+        <div className="trunk-confirm-header">
+          <h2 className="trunk-confirm-title">🚗 荷室の最終確認</h2>
+          <p className="trunk-confirm-subtitle">{scenario.emoji} {scenario.name}</p>
+        </div>
+
+        <div className="trunk-confirm-scroll">
+          <div className="trunk-confirm-count">
+            {loaded.size}個の道具を積み込みました
+          </div>
+
+          <div className="trunk-confirm-list">
+            {loaded.size === 0 ? (
+              <p className="trunk-confirm-empty">
+                荷物が何もありません。ガレージへ戻って積み込もう！
+              </p>
+            ) : (
+              [...loaded].map(name => (
+                <div key={name} className="trunk-confirm-item">
+                  <span className="trunk-confirm-item-icon">{ALL_ITEMS[name] || '🏕️'}</span>
+                  <span className="trunk-confirm-item-name">{name}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="trunk-confirm-buttons">
+            <button
+              className="btn-primary"
+              onClick={() => goToResult(loadedRef.current)}
+            >
+              この内容で出発する
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => {
+                setCharPos('car-trunk')
+                setCharBubble('戻ってきた！')
+                setTimeout(() => setCharBubble(''), 2000)
+                setScreen('game')
+              }}
+            >
+              ガレージへ戻る
+            </button>
+          </div>
         </div>
       </div>
     )
