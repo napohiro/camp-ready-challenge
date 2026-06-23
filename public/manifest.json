@@ -1,0 +1,17 @@
+{
+  "name": "忘れ物ゼロ！キャンプ出発まで60秒",
+  "short_name": "キャンプ60秒",
+  "description": "キャンプの準備を60秒で完成させるミニゲーム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
